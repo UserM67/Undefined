@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamster Duel: Bob vs. Darth Cheese</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* Custom glow effects */
+        .glow-red {
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        .glow-blue {
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen justify-between">
+
+    <!-- Header -->
+    <header class="w-full bg-slate-900/80 backdrop-blur-md border-b border-slate-800 p-4 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🐹</span>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider text-yellow-400 orbitron">HAMSTER DUEL</h1>
+                    <p class="text-xs text-slate-400">Bob vs. Darth Cheese (Balanced Edition)</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <!-- Mode Toggle -->
+                <div class="bg-slate-950 p-1 rounded-full border border-slate-800 flex">
+                    <button id="btn-watch" class="px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 bg-blue-600 text-white shadow-lg">
+                        🎥 Watch (Cinema)
+                    </button>
+                    <button id="btn-play" class="px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 text-slate-400 hover:text-white">
+                        🎮 Play Mode
+                    </button>
+                </div>
+                <!-- Sound Toggle -->
+                <button id="btn-sound" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 transition-colors">
+                    <span id="sound-icon">🔈 Synth Sound: Off</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4 max-w-6xl w-full mx-auto">
+        
+        <!-- Game Area Container -->
+        <div class="relative w-full aspect-[16/9] max-h-[70vh] bg-slate-950 rounded-2xl overflow-hidden shadow-2xl border-2 border-slate-800 flex flex-col">
+            
+            <!-- Health Bars Overlay -->
+            <div class="absolute top-4 left-4 right-4 flex justify-between gap-8 z-10 pointer-events-none">
+                <!-- Bob (Red) -->
+                <div class="flex-1 max-w-[40%]">
+                    <div class="flex justify-between items-end mb-1">
+                        <span class="font-bold text-red-500 orbitron text-sm md:text-lg glow-red">BOB</span>
+                        <span class="text-xs text-slate-400">Jedi Hamster</span>
+                    </div>
+                    <div class="h-4 bg-slate-900 rounded-full border border-red-900/50 overflow-hidden p-0.5">
+                        <div id="bob-health" class="h-full bg-gradient-to-r from-red-600 to-rose-400 rounded-full transition-all duration-100 shadow-[0_0_10px_rgba(239,68,68,0.5)]" style="width: 100%;"></div>
+                    </div>
+                </div>
+
+                <!-- Clash Indicator -->
+                <div class="flex items-center justify-center">
+                    <div id="clash-indicator" class="w-12 h-12 rounded-full bg-yellow-400/20 border border-yellow-400 flex items-center justify-center animate-pulse scale-90 opacity-0 transition-all">
+                        <span class="text-yellow-400 font-black text-xl">⚡</span>
+                    </div>
+                </div>
+
+                <!-- Darth Cheese (Blue) -->
+                <div class="flex-1 max-w-[40%] text-right">
+                    <div class="flex justify-between items-end mb-1 flex-row-reverse">
+                        <span class="font-bold text-blue-400 orbitron text-sm md:text-lg glow-blue">DARTH CHEESE</span>
+                        <span class="text-xs text-slate-400">Sith Lord Cheddar</span>
+                    </div>
+                    <div class="h-4 bg-slate-900 rounded-full border border-blue-900/50 overflow-hidden p-0.5">
+                        <div id="cheese-health" class="h-full bg-gradient-to-l from-blue-600 to-cyan-400 rounded-full transition-all duration-100 shadow-[0_0_10px_rgba(59,130,246,0.5)]" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Canvas -->
+            <canvas id="duel-canvas" class="w-full h-full block bg-slate-900"></canvas>
+
+            <!-- Touch Controls (Only visible in Play Mode) -->
+            <div id="play-controls" class="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 pointer-events-none opacity-0 transition-opacity duration-300">
+                <!-- Move Controls -->
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="ctrl-left" class="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-slate-900/80 active:bg-slate-700/80 border border-slate-700 text-2xl flex items-center justify-center select-none">◀</button>
+                    <button id="ctrl-right" class="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-slate-900/80 active:bg-slate-700/80 border border-slate-700 text-2xl flex items-center justify-center select-none">▶</button>
+                </div>
+                <!-- Action Controls -->
+                <div class="flex gap-2 pointer-events-auto">
+                    <button id="ctrl-jump" class="w-12 h-12 md:w-16 md:h-16 rounded-xl bg-slate-900/80 active:bg-slate-700/80 border border-slate-700 text-xl flex flex-col items-center justify-center select-none">
+                        <span>▲</span>
+                        <span class="text-[9px] uppercase tracking-wider text-slate-400">Jump</span>
+                    </button>
+                    <button id="ctrl-attack" class="w-14 h-14 md:w-20 md:h-20 rounded-full bg-red-600/80 active:bg-red-500/80 border-2 border-red-400 text-white text-xl flex flex-col items-center justify-center shadow-lg shadow-red-900/50 select-none">
+                        <span>⚔️</span>
+                        <span class="text-[9px] uppercase tracking-wider font-bold">Strike</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Start / Sound Permission Dialog -->
+            <div id="start-overlay" class="absolute inset-0 bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 z-20 transition-opacity duration-500">
+                <span class="text-6xl mb-4 animate-bounce">🐹⚡🧀</span>
+                <h2 class="text-3xl font-black text-yellow-400 orbitron mb-2 tracking-wide">READY FOR THE DUEL?</h2>
+                <p class="text-sm md:text-base text-slate-300 max-w-md mb-6">
+                    Activate procedural audio for a fully immersive lightsaber experience with hums, swings, and clashing sparks!
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="btn-start-sound" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl transition shadow-lg shadow-yellow-500/20 orbitron text-base">
+                        🔊 Enable Sound & Start
+                    </button>
+                    <button id="btn-start-silent" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition border border-slate-700 text-base">
+                        🔇 Play Silent
+                    </button>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Instructions Panel -->
+        <div class="w-full mt-6 bg-slate-900/40 border border-slate-800/80 rounded-xl p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="text-left flex-1">
+                <h3 class="text-yellow-400 font-bold orbitron text-sm mb-1">🎮 CONTROLS (PLAY MODE)</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">A</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">◀</kbd> Move Left &nbsp;|&nbsp; 
+                    <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">D</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">▶</kbd> Move Right &nbsp;|&nbsp; 
+                    <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">W</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">Space</kbd> Jump &nbsp;|&nbsp; 
+                    <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">J</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs text-slate-200">Left Click</kbd> Strike Lightsaber
+                </p>
+            </div>
+            <div class="text-right md:border-l border-slate-800 md:pl-6 text-left md:text-right mt-2 md:mt-0 flex-1">
+                <h3 class="text-slate-200 font-bold orbitron text-sm mb-1">💡 DID YOU KNOW?</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">
+                    Darth Cheese is entirely made of melting Swiss cheese! Every swing scatters hot glowing cheddar crumbs onto the battlefield.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full text-center py-4 text-xs text-slate-500 border-t border-slate-900 mt-8">
+        Designed for the Ultimate Hamster Battle &bull; Powered by HTML5 Canvas & Web Audio API
+    </footer>
+
+    <!-- Logic Script -->
+    <script>
+        const canvas = document.getElementById('duel-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // State variables
+        let appMode = 'watch'; // 'watch' or 'play'
+        let audioEnabled = false;
+        let audioCtx = null;
+        let mainHumOsc = null;
+        let mainHumGain = null;
+
+        // Sound Synthesis Helper
+        function playSynthSound(freq, duration, type = 'sine', volume = 0.1) {
+            if (!audioEnabled || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.error("Audio synth error", e);
+            }
+        }
+
+        // Crackling Clash Sound Synthesis
+        function playClashSound() {
+            if (!audioEnabled || !audioCtx) return;
+            try {
+                // Core boom sound
+                playSynthSound(120, 0.3, 'sawtooth', 0.15);
+                playSynthSound(280, 0.15, 'triangle', 0.2);
+                
+                // Noise buffer crackle
+                const bufferSize = audioCtx.sampleRate * 0.1; // 100ms of crackle
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                
+                const noiseNode = audioCtx.createBufferSource();
+                noiseNode.buffer = buffer;
+                
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'highpass';
+                filter.frequency.value = 1000;
+                
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                
+                noiseNode.connect(filter);
+                filter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                
+                noiseNode.start();
+            } catch (e) {
+                console.error("Clash sound error", e);
+            }
+        }
+
+        function initBackgroundHum() {
+            if (!audioEnabled) return;
+            try {
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Idle Lightsaber Hum (low deep rumble)
+                mainHumOsc = audioCtx.createOscillator();
+                mainHumGain = audioCtx.createGain();
+                
+                mainHumOsc.type = 'sawtooth';
+                mainHumOsc.frequency.setValueAtTime(65, audioCtx.currentTime); // C2 Note
+                
+                // Low pass filter to make the hum rich and deep
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = 180;
+                
+                mainHumGain.gain.setValueAtTime(0.04, audioCtx.currentTime);
+                
+                mainHumOsc.connect(filter);
+                filter.connect(mainHumGain);
+                mainHumGain.connect(audioCtx.destination);
+                
+                mainHumOsc.start();
+            } catch (e) {
+                console.warn("Could not start hum synth:", e);
+            }
+        }
+
+        function stopBackgroundHum() {
+            if (mainHumOsc) {
+                try {
+                    mainHumOsc.stop();
+                } catch(e){}
+                mainHumOsc = null;
+            }
+        }
+
+        // Game Configuration
+        const config = {
+            gravity: 0.6,
+            groundY: 0.82, // percentage of height
+            lightsaberLen: 50,
+        };
+
+        // Entities Setup
+        class Character {
+            constructor(x, side, name, color, saberColor) {
+                this.x = x;
+                this.y = 0;
+                this.vx = 0;
+                this.vy = 0;
+                this.width = 70;
+                this.height = 70;
+                this.side = side; // 'left' or 'right'
+                this.name = name;
+                this.color = color;
+                this.saberColor = saberColor;
+                this.health = 100;
+                this.isGrounded = false;
+                this.state = 'idle'; // 'idle', 'running', 'jumping', 'swinging', 'recoiling'
+                this.stateTimer = 0;
+                
+                // Saber angle and properties
+                this.saberAngle = side === 'left' ? -Math.PI/6 : Math.PI + Math.PI/6;
+                this.targetSaberAngle = this.saberAngle;
+                this.swingSpeed = 0.2;
+                this.lungeCooldown = 0;
+                
+                // For animation
+                this.bobOffset = 0;
+                this.wiggleTimer = 0;
+            }
+
+            update(target) {
+                // Apply physics
+                this.y += this.vy;
+                this.x += this.vx;
+                this.vy += config.gravity;
+
+                const ground = canvas.height * config.groundY - this.height;
+                if (this.y >= ground) {
+                    this.y = ground;
+                    this.vy = 0;
+                    this.isGrounded = true;
+                    if (this.state === 'jumping') this.state = 'idle';
+                } else {
+                    this.isGrounded = false;
+                }
+
+                // Drag/Friction on ground
+                if (this.isGrounded) {
+                    this.vx *= 0.8;
+                }
+
+                // AI Steering if in watch mode or if it is Darth Cheese
+                if (appMode === 'watch' || this !== bob) {
+                    this.updateAI(target);
+                }
+
+                // Cooldowns
+                if (this.lungeCooldown > 0) this.lungeCooldown--;
+
+                // State machine updates
+                this.stateTimer++;
+                if (this.state === 'swinging') {
+                    // Swing lightsaber animation
+                    if (this.side === 'left') {
+                        this.targetSaberAngle = Math.PI / 4; // Swing down-forward
+                    } else {
+                        this.targetSaberAngle = Math.PI - Math.PI / 4; // Swing down-forward for right side
+                    }
+                    if (this.stateTimer > 15) {
+                        this.state = 'idle';
+                    }
+                } else if (this.state === 'recoiling') {
+                    // Recoil back from hit/clash
+                    this.targetSaberAngle = this.side === 'left' ? -Math.PI/2 : Math.PI + Math.PI/2;
+                    if (this.stateTimer > 20) {
+                        this.state = 'idle';
+                    }
+                } else {
+                    // Standard Idle/Ready position
+                    const pulse = Math.sin(Date.now() / 150) * 0.08;
+                    if (this.side === 'left') {
+                        this.targetSaberAngle = -Math.PI / 6 + pulse;
+                    } else {
+                        this.targetSaberAngle = Math.PI + Math.PI / 6 - pulse;
+                    }
+                }
+
+                // Interpolate saber angle for smoothness
+                this.saberAngle += (this.targetSaberAngle - this.saberAngle) * this.swingSpeed;
+
+                // Keeps characters facing each other
+                this.side = this.x < target.x ? 'left' : 'right';
+
+                // Keep inside bounds
+                if (this.x < 20) this.x = 20;
+                if (this.x > canvas.width - this.width - 20) this.x = canvas.width - this.width - 20;
+
+                // Wobble animation logic
+                if (Math.abs(this.vx) > 0.5) {
+                    this.wiggleTimer += 0.2;
+                    this.bobOffset = Math.sin(this.wiggleTimer) * 4;
+                } else {
+                    this.bobOffset = Math.sin(Date.now() / 200) * 1.5;
+                }
+            }
+
+            jump() {
+                if (this.isGrounded) {
+                    this.vy = -12;
+                    this.state = 'jumping';
+                    playSynthSound(220, 0.1, 'sine', 0.05); // swoop-like jump
+                }
+            }
+
+            swing() {
+                if (this.state !== 'swinging' && this.state !== 'recoiling') {
+                    this.state = 'swinging';
+                    this.stateTimer = 0;
+                    playSynthSound(Math.random() * 100 + 150, 0.25, 'triangle', 0.08); // Swish synth
+                }
+            }
+
+            recoil() {
+                this.state = 'recoiling';
+                this.stateTimer = 0;
+                this.vx = this.side === 'left' ? -6 : 6;
+            }
+
+            updateAI(target) {
+                const dist = Math.abs(this.x - target.x);
+                const isCheese = this.name === 'Darth Cheese';
+                
+                // Difficulty Multipliers: Cheese is significantly slower and less aggressive to make it easy for the player
+                const speedMult = isCheese ? 0.22 : 0.5;
+                const retreatMult = isCheese ? 0.18 : 0.4;
+                const swingChanceClose = isCheese ? 0.025 : 0.05;
+                const swingChanceMid = isCheese ? 0.01 : 0.02;
+                
+                if (dist > 180) {
+                    // Move closer
+                    if (this.x < target.x) this.vx += speedMult;
+                    else this.vx -= speedMult;
+                } else if (dist < 80) {
+                    // Back away or prepare strike
+                    if (this.x < target.x) this.vx -= retreatMult;
+                    else this.vx += retreatMult;
+                    
+                    if (Math.random() < swingChanceClose && this.lungeCooldown === 0) {
+                        this.swing();
+                        this.lungeCooldown = 55; // Longer attack cool down for Cheese
+                    }
+                } else {
+                    // Perfect combat range
+                    if (Math.random() < swingChanceMid) {
+                        this.swing();
+                    }
+                    if (Math.random() < 0.01) {
+                        this.jump();
+                    }
+                }
+            }
+
+            draw() {
+                const centerX = this.x + this.width / 2;
+                const centerY = this.y + this.height / 2 + this.bobOffset;
+
+                ctx.save();
+                ctx.translate(centerX, centerY);
+
+                // Draw Hamster
+                if (this.name === 'Bob') {
+                    drawBobHamster(this.side);
+                } else {
+                    drawCheeseHamster(this.side);
+                }
+
+                // Draw Saber Hilt reference coordinates
+                ctx.restore();
+
+                // Draw Saber with glowing effects (Needs global coordinates)
+                // Calculate hand position relative to center
+                const handX = centerX + (this.side === 'left' ? 12 : -12);
+                const handY = centerY + 10;
+                
+                const tipX = handX + Math.cos(this.saberAngle) * config.lightsaberLen;
+                const tipY = handY + Math.sin(this.saberAngle) * config.lightsaberLen;
+
+                // Inner Saber Core (White)
+                ctx.save();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                
+                // Saber Outer Glow
+                ctx.shadowColor = this.saberColor;
+                ctx.shadowBlur = 18;
+                ctx.beginPath();
+                ctx.moveTo(handX, handY);
+                ctx.lineTo(tipX, tipY);
+                ctx.stroke();
+
+                // Draw Hilt
+                ctx.shadowBlur = 0;
+                ctx.strokeStyle = '#888888';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                const hiltBaseX = handX - Math.cos(this.saberAngle) * 6;
+                const hiltBaseY = handY - Math.sin(this.saberAngle) * 6;
+                ctx.moveTo(hiltBaseX, hiltBaseY);
+                ctx.lineTo(handX, handY);
+                ctx.stroke();
+                ctx.restore();
+
+                // Expose points for collision
+                this.saberTip = { x: tipX, y: tipY };
+                this.saberBase = { x: handX, y: handY };
+            }
+        }
+
+        // Drawing Utilities for Hamsters
+        function drawBobHamster(side) {
+            const dir = side === 'left' ? 1 : -1;
+
+            // Jedi Robe back / Cape
+            ctx.fillStyle = '#5c4033'; // Brown robe
+            ctx.beginPath();
+            ctx.ellipse(-5 * dir, 12, 18, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main Body (Fluffy Hamster)
+            ctx.fillStyle = '#e49b5c'; // Golden brown fur
+            ctx.beginPath();
+            ctx.ellipse(0, 4, 22, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // White belly
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(4 * dir, 10, 12, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Head details/stripes
+            ctx.fillStyle = '#b77334';
+            ctx.beginPath();
+            ctx.ellipse(-4 * dir, -14, 15, 12, 0.1 * dir, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ears
+            ctx.fillStyle = '#fca5a5'; // Pink ears
+            ctx.strokeStyle = '#e49b5c';
+            ctx.lineWidth = 3;
+            // Back ear
+            ctx.beginPath();
+            ctx.arc(-12 * dir, -22, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            // Front ear
+            ctx.beginPath();
+            ctx.arc(6 * dir, -24, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Eyes
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(10 * dir, -10, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+            // Eye shine
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(11 * dir, -11, 1, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pink Nose
+            ctx.fillStyle = '#ff9999';
+            ctx.beginPath();
+            ctx.arc(18 * dir, -4, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Whiskers
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(15 * dir, -2);
+            ctx.lineTo(28 * dir, -4);
+            ctx.moveTo(15 * dir, -2);
+            ctx.lineTo(30 * dir, 1);
+            ctx.moveTo(15 * dir, -2);
+            ctx.lineTo(26 * dir, 6);
+            ctx.stroke();
+
+            // Jedi Belts
+            ctx.fillStyle = '#452c1e';
+            ctx.fillRect(-14, 16, 28, 4);
+        }
+
+        function drawCheeseHamster(side) {
+            const dir = side === 'left' ? 1 : -1;
+
+            // Gooey Sith Cape
+            ctx.fillStyle = '#220011'; // Dark violet-black cape
+            ctx.beginPath();
+            ctx.ellipse(-6 * dir, 12, 20, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Melting Cheddar Body
+            ctx.fillStyle = '#f59e0b'; // Darker gold/orange cheddar
+            ctx.beginPath();
+            ctx.ellipse(0, 4, 22, 24, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Swiss Cheese Helmet (Vader style but made of swiss cheese!)
+            ctx.fillStyle = '#fbbf24'; // Brighter cheese
+            ctx.strokeStyle = '#d97706';
+            ctx.lineWidth = 2;
+            
+            // Helmet dome
+            ctx.beginPath();
+            ctx.arc(0, -10, 20, Math.PI, 0);
+            ctx.lineTo(16 * dir, 4);
+            ctx.lineTo(-16 * dir, 4);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Holes in cheese helmet
+            ctx.fillStyle = '#b45309'; // Dark cheese hole interior
+            ctx.beginPath();
+            ctx.arc(-8, -16, 3, 0, Math.PI * 2);
+            ctx.arc(6, -14, 2, 0, Math.PI * 2);
+            ctx.arc(-2, -6, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Glow red Sith eyes inside helmet shadows
+            ctx.fillStyle = '#ef4444';
+            ctx.shadowColor = '#ef4444';
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(8 * dir, -4, 3, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0; // reset
+
+            // Melting Cheddar Drips at the bottom
+            ctx.fillStyle = '#f59e0b';
+            const wave = Math.sin(Date.now() / 100) * 3;
+            ctx.beginPath();
+            ctx.moveTo(-16, 18);
+            ctx.bezierCurveTo(-10, 26 + wave, -6, 20, 0, 24 - wave);
+            ctx.bezierCurveTo(6, 28 + wave, 12, 18, 16, 20);
+            ctx.lineTo(16, 10);
+            ctx.lineTo(-16, 10);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Spark and Cheese Crumb Particle System
+        class Particle {
+            constructor(x, y, vx, vy, color, size, life) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.color = color;
+                this.size = size;
+                this.maxLife = life;
+                this.life = life;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.2; // Gravity
+                this.life--;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.life / this.maxLife;
+                ctx.fillStyle = this.color;
+                // Add lightsaber particle glow
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        let particles = [];
+
+        function createClashSparks(x, y) {
+            const count = 18;
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 6 + 4;
+                const size = Math.random() * 2.5 + 1.5;
+                const colors = ['#ffffff', '#fef08a', '#fb923c', '#f43f5e'];
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                particles.push(new Particle(
+                    x, y,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed - 2, // slightly upwards
+                    color, size, 25 + Math.random() * 15
+                ));
+            }
+        }
+
+        function createCheeseDrips(x, y) {
+            // Hot cheddar drips falling off Darth Cheese when hit
+            const count = 6;
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI - Math.PI; // upward arc
+                const speed = Math.random() * 3 + 2;
+                particles.push(new Particle(
+                    x, y,
+                    Math.cos(angle) * speed,
+                    Math.sin(angle) * speed,
+                    '#fbbf24', Math.random() * 3 + 2, 30
+                ));
+            }
+        }
+
+        // Background Castle Elements
+        function drawBackground() {
+            // Dark night sky gradient
+            const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGradient.addColorStop(0, '#020617');
+            skyGradient.addColorStop(1, '#0f172a');
+            ctx.fillStyle = skyGradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Stars
+            ctx.fillStyle = '#ffffff';
+            ctx.globalAlpha = 0.15;
+            for (let i = 0; i < 20; i++) {
+                const starX = (Math.sin(i * 3123.4) * 0.5 + 0.5) * canvas.width;
+                const starY = (Math.cos(i * 4523.1) * 0.5 + 0.5) * (canvas.height * 0.5);
+                ctx.fillRect(starX, starY, 2, 2);
+            }
+            ctx.globalAlpha = 1.0;
+
+            // Distant castle walls/ruins
+            ctx.fillStyle = '#1e293b';
+            // Main battlements
+            ctx.fillRect(0, canvas.height * 0.4, canvas.width, canvas.height * 0.6);
+            
+            // Archway in background
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height * 0.55, 60, Math.PI, 0);
+            ctx.lineTo(canvas.width/2 + 60, canvas.height * 0.85);
+            ctx.lineTo(canvas.width/2 - 60, canvas.height * 0.85);
+            ctx.closePath();
+            ctx.fill();
+
+            // Wall Bricks Texturing
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            for (let y = canvas.height * 0.45; y < canvas.height * 0.8; y += 30) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Ground Floor (Cobble stones in the ruins)
+            const groundGradient = ctx.createLinearGradient(0, canvas.height * config.groundY, 0, canvas.height);
+            groundGradient.addColorStop(0, '#334155');
+            groundGradient.addColorStop(1, '#0f172a');
+            ctx.fillStyle = groundGradient;
+            ctx.fillRect(0, canvas.height * config.groundY, canvas.width, canvas.height * (1 - config.groundY));
+
+            // Draw Cobble joints
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height * config.groundY);
+            ctx.lineTo(canvas.width, canvas.height * config.groundY);
+            ctx.stroke();
+
+            // Ambient lights (Torch on walls)
+            drawTorch(canvas.width * 0.15, canvas.height * 0.45);
+            drawTorch(canvas.width * 0.85, canvas.height * 0.45);
+        }
+
+        function drawTorch(x, y) {
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(x - 3, y, 6, 20); // Torch holder
+
+            // Glowing flame (animated)
+            const pulse = Math.sin(Date.now() / 80) * 3;
+            ctx.save();
+            ctx.shadowColor = '#f59e0b';
+            ctx.shadowBlur = 15;
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.arc(x, y - 2, 8 + pulse/2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(x, y - 1, 5 + pulse/4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        // Characters Init
+        const bob = new Character(180, 'left', 'Bob', '#e49b5c', '#ef4444'); // Bob gets the RED lightsaber
+        const cheese = new Character(500, 'right', 'Darth Cheese', '#fbbf24', '#3b82f6'); // Darth Cheese gets the BLUE lightsaber
+
+        // Saber to Saber Collision Detection (Line Segment Intersection)
+        function checkLineIntersection(p0, p1, p2, p3) {
+            const s1_x = p1.x - p0.x;
+            const s1_y = p1.y - p0.y;
+            const s2_x = p3.x - p2.x;
+            const s2_y = p3.y - p2.y;
+
+            const s = (-s1_y * (p0.x - p2.x) + s1_x * (p0.y - p2.y)) / (-s2_x * s1_y + s1_x * s2_y);
+            const t = ( s2_x * (p0.y - p2.y) - s2_y * (p0.x - p2.x)) / (-s2_x * s1_y + s1_x * s2_y);
+
+            if (s >= 0 && s <= 1 && t >= 0 && t <= 1) {
+                // Collision detected! Return intersection point
+                return {
+                    x: p0.x + (t * s1_x),
+                    y: p0.y + (t * s1_y)
+                };
+            }
+            return null;
+        }
+
+        // Body hitboxes (Hamster circles)
+        function checkBodyHit(saberBase, saberTip, char) {
+            const charCenter = {
+                x: char.x + char.width / 2,
+                y: char.y + char.height / 2
+            };
+            const radius = char.width / 2;
+
+            // Distance from point to line segment
+            const A = charCenter.x - saberBase.x;
+            const B = charCenter.y - saberBase.y;
+            const C = saberTip.x - saberBase.x;
+            const D = saberTip.y - saberBase.y;
+
+            const dot = A * C + B * D;
+            const len_sq = C * C + D * D;
+            let param = -1;
+            if (len_sq !== 0) param = dot / len_sq;
+
+            let xx, yy;
+
+            if (param < 0) {
+                xx = saberBase.x;
+                yy = saberBase.y;
+            } else if (param > 1) {
+                xx = saberTip.x;
+                yy = saberTip.y;
+            } else {
+                xx = saberBase.x + param * C;
+                yy = saberBase.y + param * D;
+            }
+
+            const dx = charCenter.x - xx;
+            const dy = charCenter.y - yy;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            return distance < radius;
+        }
+
+        const clashIndicator = document.getElementById('clash-indicator');
+
+        function handleCombatPhysics() {
+            if (!bob.saberTip || !cheese.saberTip) return;
+
+            // 1. Lightsaber vs Lightsaber collision
+            const clashPoint = checkLineIntersection(
+                bob.saberBase, bob.saberTip,
+                cheese.saberBase, cheese.saberTip
+            );
+
+            if (clashPoint) {
+                createClashSparks(clashPoint.x, clashPoint.y);
+                bob.recoil();
+                cheese.recoil();
+                playClashSound();
+
+                // Flash clash indicator
+                clashIndicator.style.opacity = '1';
+                clashIndicator.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    clashIndicator.style.opacity = '0';
+                    clashIndicator.style.transform = 'scale(0.9)';
+                }, 100);
+                return; // Sabers blocked each other, no damage!
+            }
+
+            // 2. Bob's Red Saber hitting Darth Cheese (Now deals much higher damage for a fun, easy mode!)
+            if (bob.state === 'swinging' && checkBodyHit(bob.saberBase, bob.saberTip, cheese)) {
+                cheese.health -= 12; // Boosted from 6 (Double damage!)
+                cheese.recoil();
+                createCheeseDrips(cheese.x + cheese.width/2, cheese.y + cheese.height/2);
+                playSynthSound(100, 0.4, 'sawtooth', 0.15); // Hit synth
+                
+                // Keep health bound
+                if (cheese.health < 0) cheese.health = 100; // loop fight
+                document.getElementById('cheese-health').style.width = `${cheese.health}%`;
+            }
+
+            // 3. Darth Cheese's Blue Saber hitting Bob (Deals less damage for a fair combat)
+            if (cheese.state === 'swinging' && checkBodyHit(cheese.saberBase, cheese.saberTip, bob)) {
+                bob.health -= 4; // Decreased from 6
+                bob.recoil();
+                playSynthSound(100, 0.4, 'sawtooth', 0.15); // Hit synth
+                
+                if (bob.health < 0) bob.health = 100; // loop fight
+                document.getElementById('bob-health').style.width = `${bob.health}%`;
+            }
+        }
+
+        // Main Loop
+        function gameLoop() {
+            // Resize Canvas dynamically keeping aspect ratio
+            const rect = canvas.getBoundingClientRect();
+            if (canvas.width !== rect.width || canvas.height !== rect.height) {
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            }
+
+            // Updates
+            bob.update(cheese);
+            cheese.update(bob);
+            handleCombatPhysics();
+
+            // Clear & Draw Backgound
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawBackground();
+
+            // Draw Entities
+            bob.draw();
+            cheese.draw();
+
+            // Handle and Draw Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Controls Hookups
+        const keys = {};
+        window.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (appMode === 'play') {
+                if (e.key.toLowerCase() === 'w' || e.key === ' ') {
+                    bob.jump();
+                }
+                if (e.key.toLowerCase() === 'j') {
+                    bob.swing();
+                }
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Loop handling manually-driven Bob (Boosted keyboard speed to make Bob nimbler!)
+        function handleManualControls() {
+            if (appMode !== 'play') return;
+
+            // Move Left
+            if (keys['a'] || keys['arrowleft']) {
+                bob.vx = -6.5; // Boosted from -4.5
+            }
+            // Move Right
+            if (keys['d'] || keys['arrowright']) {
+                bob.vx = 6.5; // Boosted from 4.5
+            }
+
+            // Modulate general lightsaber hum frequency slightly based on movement!
+            if (mainHumOsc) {
+                const speed = Math.abs(bob.vx);
+                mainHumOsc.frequency.setValueAtTime(65 + speed * 4, audioCtx.currentTime);
+            }
+
+            setTimeout(handleManualControls, 20);
+        }
+
+        // Click on canvas to attack in Play Mode
+        canvas.addEventListener('mousedown', () => {
+            if (appMode === 'play') {
+                bob.swing();
+            }
+        });
+
+        // Mode Toggles UI
+        const btnWatch = document.getElementById('btn-watch');
+        const btnPlay = document.getElementById('btn-play');
+        const playControls = document.getElementById('play-controls');
+
+        btnWatch.addEventListener('click', () => {
+            appMode = 'watch';
+            btnWatch.className = "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 bg-blue-600 text-white shadow-lg";
+            btnPlay.className = "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 text-slate-400 hover:text-white";
+            playControls.style.opacity = '0';
+            playControls.style.pointerEvents = 'none';
+        });
+
+        btnPlay.addEventListener('click', () => {
+            appMode = 'play';
+            btnPlay.className = "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 bg-blue-600 text-white shadow-lg";
+            btnWatch.className = "px-4 py-1.5 rounded-full text-sm font-semibold transition-all duration-300 text-slate-400 hover:text-white";
+            playControls.style.opacity = '1';
+            playControls.style.pointerEvents = 'auto';
+            handleManualControls();
+        });
+
+        // Touch Control Triggers for Mobile
+        const registerTouch = (elem, action) => {
+            elem.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                action(true);
+            });
+            elem.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                action(false);
+            });
+        };
+
+        registerTouch(document.getElementById('ctrl-left'), (active) => { keys['a'] = active; });
+        registerTouch(document.getElementById('ctrl-right'), (active) => { keys['d'] = active; });
+        document.getElementById('ctrl-jump').addEventListener('touchstart', (e) => { e.preventDefault(); bob.jump(); });
+        document.getElementById('ctrl-attack').addEventListener('touchstart', (e) => { e.preventDefault(); bob.swing(); });
+
+
+        // Audio Permissive Overlay Setup
+        const startOverlay = document.getElementById('start-overlay');
+        const btnSound = document.getElementById('btn-sound');
+        const soundIcon = document.getElementById('sound-icon');
+
+        function setupAudioAndStart(withSound) {
+            audioEnabled = withSound;
+            if (withSound) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                initBackgroundHum();
+                soundIcon.textContent = "🔊 Synth Sound: On";
+            } else {
+                soundIcon.textContent = "🔈 Synth Sound: Off";
+            }
+            
+            // Fade out overlay
+            startOverlay.style.opacity = '0';
+            setTimeout(() => {
+                startOverlay.style.display = 'none';
+            }, 500);
+
+            // Start loop
+            gameLoop();
+        }
+
+        document.getElementById('btn-start-sound').addEventListener('click', () => setupAudioAndStart(true));
+        document.getElementById('btn-start-silent').addEventListener('click', () => setupAudioAndStart(false));
+
+        // Toggle Sound mid-game
+        btnSound.addEventListener('click', () => {
+            if (audioEnabled) {
+                audioEnabled = false;
+                stopBackgroundHum();
+                soundIcon.textContent = "🔈 Synth Sound: Off";
+            } else {
+                audioEnabled = true;
+                initBackgroundHum();
+                soundIcon.textContent = "🔊 Synth Sound: On";
+            }
+        });
+
+    </script>
+</body>
+</html>
